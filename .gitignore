@@ -1,0 +1,16 @@
+# Datasets & generated data
+/RicePest-30-Dataset/
+/yolo_dataset/
+/yolo26_dataset/
+/classification_dataset/
+/classification_dataset_yolo26/
+
+# Model weights & training outputs
+*.pt
+/runs/
+*.cache
+
+# Python & OS
+__pycache__/
+*.pyc
+.DS_Store
