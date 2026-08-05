@@ -132,3 +132,4 @@ python prepare_yolo26_classification.py --source RicePest-30-Dataset --output cl
 python train_yolo26_classify.py --data classification_dataset_yolo26 --model yolo26s-cls.pt --epochs 100
 ```
 # ai-rice-pest-
+# ai-rice-pest-
