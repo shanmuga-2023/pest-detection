@@ -752,15 +752,25 @@
       if (mobBtns[idx]) mobBtns[idx].classList.add('active');
     }
 
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? ''
+      : 'https://pest-detection-b6pu.onrender.com';
+
+    function formatUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+      return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
     async function loadSamples() {
       try {
-        const res = await fetch('/api/sample_images');
+        const res = await fetch(`${API_BASE}/api/sample_images`);
         const data = await res.json();
         const container = document.getElementById('sample-grid-container');
         container.innerHTML = '';
         (data.samples || []).forEach(s => {
           const img = document.createElement('img');
-          img.src = s.url;
+          img.src = formatUrl(s.url);
           img.className = 'sample-thumb';
           img.onclick = () => runDiagnosisSample(s.url);
           container.appendChild(img);
@@ -775,14 +785,14 @@
       const lang = document.getElementById('lang-selector').value;
 
       try {
-        const res = await fetch('/api/diagnose', {
+        const res = await fetch(`${API_BASE}/api/diagnose`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({sample_url: sampleUrl, language: lang})
         });
         const data = await res.json();
 
-        document.getElementById('result-annotated-img').src = data.annotated_image_url;
+        document.getElementById('result-annotated-img').src = formatUrl(data.annotated_image_url);
         document.getElementById('lat-yolo26').innerText = `${data.yolo26_latency_ms} ms`;
         document.getElementById('lat-yolo11').innerText = `${data.yolo11_latency_ms} ms`;
 
@@ -805,14 +815,14 @@
         const lang = document.getElementById('lang-selector').value;
 
         try {
-          const res = await fetch('/api/diagnose', {
+          const res = await fetch(`${API_BASE}/api/diagnose`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({image_b64: b64, language: lang})
           });
           const data = await res.json();
 
-          document.getElementById('result-annotated-img').src = data.annotated_image_url;
+          document.getElementById('result-annotated-img').src = formatUrl(data.annotated_image_url);
           document.getElementById('lat-yolo26').innerText = `${data.yolo26_latency_ms} ms`;
           document.getElementById('lat-yolo11').innerText = `${data.yolo11_latency_ms} ms`;
 
@@ -837,7 +847,7 @@
 
     async function retranslateAdvisory() {
       const lang = document.getElementById('lang-selector').value;
-      const res = await fetch('/api/advisory', {
+      const res = await fetch(`${API_BASE}/api/advisory`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({class_name: currentLastDetection, language: lang})
@@ -850,7 +860,7 @@
       const cls = document.getElementById('advisory-class-select').value;
       const lang = document.getElementById('advisory-lang-select').value;
 
-      const res = await fetch('/api/advisory', {
+      const res = await fetch(`${API_BASE}/api/advisory`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({class_name: cls, language: lang})
@@ -873,7 +883,7 @@
       appendChatMsg(msg, 'user');
       input.value = '';
 
-      const res = await fetch('/api/chat', {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({message: msg, last_detection: currentLastDetection})
@@ -897,7 +907,7 @@
     }
 
     async function runDroneScan() {
-      const res = await fetch('/api/drone_scan', {
+      const res = await fetch(`${API_BASE}/api/drone_scan`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({sample_url: 'RicePest-30-Dataset/train/1000_219084908.jpg'})
@@ -905,8 +915,8 @@
       const data = await res.json();
 
       document.getElementById('drone-results').style.display = 'block';
-      document.getElementById('drone-ann-img').src = data.output_annotated_image;
-      document.getElementById('drone-heat-img').src = data.output_density_heatmap;
+      document.getElementById('drone-ann-img').src = formatUrl(data.output_annotated_image);
+      document.getElementById('drone-heat-img').src = formatUrl(data.output_density_heatmap);
       document.getElementById('drone-stats-json').innerText = JSON.stringify({
         quadrants: data.spatial_quadrant_distribution,
         total_infections: data.total_infections_detected,
