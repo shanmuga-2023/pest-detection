@@ -1,0 +1,21 @@
+# Ignore heavy python scripts and backend files for Vercel static build
+app.py
+api/
+web_app.py
+requirements.txt
+advisory_system.py
+compare_yolo11_yolo26.py
+deploy_drone_orthomosaic.py
+deploy_live_video.py
+export_edge_models.py
+generate_pptx.py
+prepare_yolo11_classification.py
+prepare_yolo11_dataset.py
+prepare_yolo26_classification.py
+prepare_yolo26_dataset.py
+predict_tiled.py
+train_yolo11.py
+train_yolo11_classify.py
+train_yolo26.py
+train_yolo26_classify.py
+yolo26s.onnx

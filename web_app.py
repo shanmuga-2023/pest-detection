@@ -315,20 +315,14 @@ class AgriAppHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 def run_server(port: int | None = None):
+    from app import app as flask_app
     if port is None:
         port = int(os.environ.get("PORT", 8000))
-    load_models()
-    server_address = ("", port)
-    httpd = HTTPServer(server_address, AgriAppHTTPRequestHandler)
     print(f"\n============================================================")
     print(f" 🌾 AgriAI Rice & Maize Pest Web & Mobile Application")
-    print(f" 🚀 Server running at port: {port}")
+    print(f" 🚀 Flask Production Server running on port: {port}")
     print(f"============================================================\n")
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        print("\nStopping AgriAI Web Server...")
-        httpd.server_close()
+    flask_app.run(host="0.0.0.0", port=port, debug=False)
 
 
 if __name__ == "__main__":
