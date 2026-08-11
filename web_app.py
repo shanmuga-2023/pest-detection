@@ -21,11 +21,22 @@ import urllib.parse
 
 from PIL import Image, ImageDraw
 import numpy as np
-from ultralytics import YOLO
+try:
+    from ultralytics import YOLO
+except Exception:
+    YOLO = None
 
 from advisory_system import get_treatment_advisory, generate_sms_alert, generate_whatsapp_payload, agribot_query_handler
-from deploy_drone_orthomosaic import run_drone_orthomosaic_scan
-from compare_yolo11_yolo26 import benchmark_model
+
+try:
+    from deploy_drone_orthomosaic import run_drone_orthomosaic_scan
+except Exception:
+    run_drone_orthomosaic_scan = None
+
+try:
+    from compare_yolo11_yolo26 import benchmark_model
+except Exception:
+    benchmark_model = None
 
 # Load YOLO models globally
 MODEL_YOLO11 = None
@@ -33,11 +44,17 @@ MODEL_YOLO26 = None
 
 WORKSPACE_DIR = Path(__file__).parent.resolve()
 UPLOAD_DIR = WORKSPACE_DIR / "runs" / "web_uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
 
 
 def load_models():
     global MODEL_YOLO11, MODEL_YOLO26
+    if YOLO is None:
+        print("  ⚠️ Ultralytics module not installed. Running server in fast CPU mode.")
+        return
     print("⏳ Loading YOLO11 and YOLO26 model checkpoints into memory...")
     try:
         yolo11_path = WORKSPACE_DIR / "yolo11s.pt"

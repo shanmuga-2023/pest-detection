@@ -25,7 +25,10 @@ from advisory_system import (
     generate_whatsapp_payload,
     agribot_query_handler
 )
-from deploy_drone_orthomosaic import run_drone_orthomosaic_scan
+try:
+    from deploy_drone_orthomosaic import run_drone_orthomosaic_scan
+except Exception:
+    run_drone_orthomosaic_scan = None
 
 # Initialize Flask App
 app = Flask(__name__, static_folder=".", static_url_path="")
