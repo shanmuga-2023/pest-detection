@@ -2,7 +2,7 @@ services:
   - type: web
     name: pest-detection-app
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt ultralytics
     startCommand: gunicorn app:app
     envVars:
       - key: PORT

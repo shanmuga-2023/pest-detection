@@ -1,5 +1,9 @@
-# Ignore all python files and backend dependencies for Vercel static deployment
-*.py
-requirements.txt
+# Ignore heavy binary weights and datasets for Vercel deployment
 *.pt
 *.onnx
+RicePest-30-Dataset/
+yolo_dataset/
+yolo26_dataset/
+runs/
+__pycache__/
+.DS_Store
