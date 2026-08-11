@@ -857,18 +857,29 @@
     }
 
     async function fetchAdvisoryDetails() {
-      const cls = document.getElementById('advisory-class-select').value;
-      const lang = document.getElementById('advisory-lang-select').value;
+      const clsEl = document.getElementById('advisory-class-select');
+      const langEl = document.getElementById('advisory-lang-select');
+      if (!clsEl || !langEl) return;
+      const cls = clsEl.value;
+      const lang = langEl.value;
 
-      const res = await fetch(`${API_BASE}/api/advisory`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({class_name: cls, language: lang})
-      });
-      const data = await res.json();
+      try {
+        const res = await fetch(`${API_BASE}/api/advisory`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({class_name: cls, language: lang})
+        });
+        if (!res.ok) {
+          console.log("Advisory API returned status:", res.status);
+          return;
+        }
+        const data = await res.json();
 
-      document.getElementById('sms-preview-box').innerText = data.sms;
-      document.getElementById('wa-preview-box').innerText = JSON.stringify(data.whatsapp, null, 2);
+        document.getElementById('sms-preview-box').innerText = data.sms || '';
+        document.getElementById('wa-preview-box').innerText = JSON.stringify(data.whatsapp || {}, null, 2);
+      } catch(e) {
+        console.log("Error fetching advisory details", e);
+      }
     }
 
     function simSendAlert() {
