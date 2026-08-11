@@ -64,16 +64,22 @@ class AgriAppHTTPRequestHandler(BaseHTTPRequestHandler):
         """Suppress noisy default logging."""
         sys.stdout.write(f"[HTTP] {self.address_string()} - {format % args}\n")
 
+    def send_cors_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin")
+        self.send_header("Access-Control-Max-Age", "86400")
+
     def _set_headers(self, status=200, content_type="application/json"):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_cors_headers()
         self.end_headers()
 
     def do_OPTIONS(self):
-        self._set_headers(200, "text/plain")
+        self.send_response(200, "OK")
+        self.send_cors_headers()
+        self.end_headers()
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -144,27 +150,35 @@ class AgriAppHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"Not Found")
 
     def do_POST(self):
-        parsed = urllib.parse.urlparse(self.path)
-        path = parsed.path
-        length = int(self.headers.get("Content-Length", 0))
-        body_bytes = self.rfile.read(length)
-
         try:
-            data = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
-        except Exception:
-            data = {}
+            parsed = urllib.parse.urlparse(self.path)
+            path = parsed.path
+            length = int(self.headers.get("Content-Length", 0))
+            body_bytes = self.rfile.read(length) if length > 0 else b""
 
-        if path == "/api/diagnose":
-            self.handle_diagnose(data)
-        elif path == "/api/drone_scan":
-            self.handle_drone_scan(data)
-        elif path == "/api/advisory":
-            self.handle_advisory(data)
-        elif path == "/api/chat":
-            self.handle_chat(data)
-        else:
-            self._set_headers(404)
-            self.wfile.write(json.dumps({"error": "Unknown API endpoint"}).encode("utf-8"))
+            try:
+                data = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+            except Exception:
+                data = {}
+
+            if path == "/api/diagnose":
+                self.handle_diagnose(data)
+            elif path == "/api/drone_scan":
+                self.handle_drone_scan(data)
+            elif path == "/api/advisory":
+                self.handle_advisory(data)
+            elif path == "/api/chat":
+                self.handle_chat(data)
+            else:
+                self._set_headers(404)
+                self.wfile.write(json.dumps({"error": "Unknown API endpoint"}).encode("utf-8"))
+        except Exception as err:
+            sys.stderr.write(f"[ERROR] Exception in do_POST: {err}\n")
+            try:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"error": str(err)}).encode("utf-8"))
+            except Exception:
+                pass
 
     def handle_diagnose(self, data: Dict[str, Any]):
         """Run side-by-side YOLO11 vs YOLO26 diagnosis on base64 image or sample path."""
@@ -174,7 +188,7 @@ class AgriAppHTTPRequestHandler(BaseHTTPRequestHandler):
 
         if img_b64:
             if "," in img_b64:
-                img_b64 = img_b64.split(",")[1]
+                img_b64 = img_b64.split(",", 1)[1]
             img_data = base64.b64decode(img_b64)
             pil_img = Image.open(BytesIO(img_data)).convert("RGB")
         elif sample_url:
@@ -228,10 +242,17 @@ class AgriAppHTTPRequestHandler(BaseHTTPRequestHandler):
             draw26.rectangle((int(w*0.2), int(h*0.2), int(w*0.8), int(h*0.8)), outline="#10B981", width=3)
             draw26.text((int(w*0.2), max(0, int(h*0.2) - 16)), f"{cls_name} 0.93", fill="#10B981")
 
-        # Save annotated result image
+        # Save annotated result image safely
         out_name = f"diag_{int(time.time()*1000)}.jpg"
-        out_path = UPLOAD_DIR / out_name
-        img_draw26.save(out_path)
+        try:
+            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+            out_path = UPLOAD_DIR / out_name
+            img_draw26.save(out_path)
+            annotated_url = f"/runs/web_uploads/{out_name}"
+        except Exception:
+            buf = BytesIO()
+            img_draw26.save(buf, format="JPEG")
+            annotated_url = f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('utf-8')}"
 
         top_class = dets26[0]["class"]
         advisory = get_treatment_advisory(top_class, lang=lang)
@@ -239,7 +260,7 @@ class AgriAppHTTPRequestHandler(BaseHTTPRequestHandler):
         wa_payload = generate_whatsapp_payload(dets26, lang=lang)
 
         resp = {
-            "annotated_image_url": f"/runs/web_uploads/{out_name}",
+            "annotated_image_url": annotated_url,
             "yolo26_latency_ms": round(lat26, 1),
             "yolo11_latency_ms": round(lat11, 1),
             "detections": dets26,
