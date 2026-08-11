@@ -5,8 +5,10 @@
 /classification_dataset/
 /classification_dataset_yolo26/
 
-# Model weights & training outputs
+# Model weights & large binaries
 *.pt
+*.onnx
+*.pptx
 /runs/
 *.cache
 

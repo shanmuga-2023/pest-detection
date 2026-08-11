@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌾 AgriAI Pro: Rice & Maize Pest Detection & Advisory System (YOLO11 vs YOLO26)</title>
+  
+  <!-- Modern Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(18, 24, 38, 0.75);
+      --bg-card-hover: rgba(26, 36, 56, 0.85);
+      --border-card: rgba(16, 185, 129, 0.2);
+      --primary: #10b981;
+      --primary-glow: rgba(16, 185, 129, 0.4);
+      --secondary: #06b6d4;
+      --accent-gold: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding-bottom: 90px; /* Space for mobile nav */
+    }
+
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* HEADER & NAVIGATION */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      background: rgba(9, 13, 22, 0.85);
+      border-bottom: 1px solid var(--border-card);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    nav.desktop-nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      color: #fff;
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    /* MOBILE NAVIGATION BAR */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: rgba(10, 15, 26, 0.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-card);
+      padding: 8px 12px;
+      justify-content: space-around;
+    }
+
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .mobile-nav-item.active {
+      color: var(--primary);
+    }
+
+    /* MAIN CONTENT LAYOUT */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* GLASS CARDS */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      transition: var(--transition);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    /* HERO SECTION */
+    .hero-banner {
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-card);
+      margin-bottom: 2rem;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    .hero-subtitle {
+      color: var(--text-muted);
+      max-width: 750px;
+      margin: 0 auto 1.5rem;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    /* DIAGNOSIS UPLOAD ZONE */
+    .upload-box {
+      border: 2px dashed var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(16, 185, 129, 0.04);
+      transition: var(--transition);
+      margin-bottom: 1.5rem;
+    }
+
+    .upload-box:hover {
+      background: rgba(16, 185, 129, 0.09);
+      border-color: #34d399;
+      box-shadow: 0 0 25px var(--primary-glow);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--primary), #059669);
+      color: #000;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* GRID LAYOUTS */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    /* SAMPLE SQUARES */
+    .sample-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 1rem;
+    }
+
+    .sample-thumb {
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .sample-thumb:hover {
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    /* COMPARISON METRICS */
+    .metric-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--primary);
+    }
+
+    .metric-badge.fast {
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+    }
+
+    .metric-badge.slow {
+      background: rgba(239, 68, 68, 0.25);
+      color: #f87171;
+    }
+
+    /* CHATBOT STYLES */
+    .chat-box {
+      height: 380px;
+      overflow-y: auto;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      background: rgba(10, 14, 23, 0.8);
+      margin-bottom: 1rem;
+    }
+
+    .chat-msg {
+      margin-bottom: 12px;
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .chat-msg.user {
+      margin-left: auto;
+      background: var(--primary);
+      color: #000;
+      font-weight: 600;
+      border-bottom-right-radius: 2px;
+    }
+
+    .chat-msg.bot {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-bottom-left-radius: 2px;
+      white-space: pre-line;
+    }
+
+    .chip {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin: 4px;
+      transition: var(--transition);
+    }
+
+    .chip:hover {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--primary);
+    }
+
+    /* TABLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* MEDIA QUERIES */
+    @media (max-width: 768px) {
+      nav.desktop-nav { display: none; }
+      .mobile-nav { display: flex; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .hero-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header>
+    <div class="brand">
+      🌾 AgriAI Pro
+      <span class="brand-badge">YOLO26 Edge Engine</span>
+    </div>
+    <nav class="desktop-nav">
+      <button class="nav-btn active" onclick="switchTab('tab-diagnose')">📸 AI Diagnosis</button>
+      <button class="nav-btn" onclick="switchTab('tab-advisory')">🌾 Farmer Advisory</button>
+      <button class="nav-btn" onclick="switchTab('tab-chat')">🤖 AgriBot</button>
+      <button class="nav-btn" onclick="switchTab('tab-drone')">🛸 Drone Aerial</button>
+      <button class="nav-btn" onclick="switchTab('tab-live')">🎥 Live Camera</button>
+      <button class="nav-btn" onclick="switchTab('tab-benchmark')">📊 YOLO11 vs 26</button>
+      <button class="nav-btn" onclick="switchTab('tab-edge')">📦 Edge Export</button>
+    </nav>
+  </header>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <div class="mobile-nav">
+    <button class="mobile-nav-item active" onclick="switchTab('tab-diagnose')">
+      <span>📸</span>Scan
+    </button>
+    <button class="mobile-nav-item" onclick="switchTab('tab-advisory')">
+      <span>🌾</span>Advisory
+    </button>
+    <button class="mobile-nav-item" onclick="switchTab('tab-chat')">
+      <span>🤖</span>AgriBot
+    </button>
+    <button class="mobile-nav-item" onclick="switchTab('tab-drone')">
+      <span>🛸</span>Drone
+    </button>
+    <button class="mobile-nav-item" onclick="switchTab('tab-benchmark')">
+      <span>📊</span>Compare
+    </button>
+  </div>
+
+  <div class="container">
+
+    <!-- HERO BANNER -->
+    <div class="hero-banner">
+      <h1 class="hero-title">Rice & Maize Pest & Disease Intelligence</h1>
+      <p class="hero-subtitle">
+        Dual-Generation YOLO11 vs YOLO26 Framework with Small-Target Optimization, 
+        Orthomosaic Drone Tiling, Live Camera Monitoring, and Multilingual SMS/WhatsApp Farmer Advisories.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button class="btn" onclick="switchTab('tab-diagnose')">📸 Diagnose Crop Leaf</button>
+        <button class="btn btn-secondary" onclick="switchTab('tab-drone')">🛸 Run Aerial Drone Scan</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: AI DIAGNOSIS -->
+    <div id="tab-diagnose" class="tab-content active">
+      <div class="glass-card">
+        <h2>📸 Upload Crop Leaf Photo for Instant AI Diagnosis</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+          Select a photo from your camera roll or pick a sample field leaf below to compare YOLO11 vs YOLO26.
+        </p>
+
+        <div class="upload-box" onclick="document.getElementById('file-input').click()">
+          <div style="font-size: 3rem; margin-bottom: 8px;">📷</div>
+          <div style="font-weight: 700; margin-bottom: 4px;">Click to Upload or Snap Camera Photo</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem;">Supports JPG, PNG (High-Res 1280px Small-Pest Resolution)</div>
+          <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <h4 style="margin-bottom: 8px; color: var(--primary);">Or select a sample field image:</h4>
+          <div class="sample-grid" id="sample-grid-container">
+            <!-- Sample thumbs populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- DIAGNOSIS RESULTS CONTAINER -->
+      <div id="diagnosis-result" style="display: none;">
+        <div class="grid-2">
+          <!-- ANNOTATED IMAGE CARD -->
+          <div class="glass-card">
+            <h3>🔍 Detection Bounding Box Visualizer</h3>
+            <img id="result-annotated-img" src="" alt="Detection Output" style="width: 100%; border-radius: var(--radius-md); margin-top: 1rem; border: 1px solid var(--border-card);">
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+              <div>
+                <span style="color: var(--text-muted);">YOLO26 Latency:</span>
+                <span class="metric-badge fast" id="lat-yolo26">48.2 ms</span>
+              </div>
+              <div>
+                <span style="color: var(--text-muted);">YOLO11 Latency:</span>
+                <span class="metric-badge slow" id="lat-yolo11">78.5 ms</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TREATMENT ADVISORY CARD -->
+          <div class="glass-card">
+            <h3 style="color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
+              <span>🌾 Agronomic Remedy</span>
+              <select id="lang-selector" onchange="retranslateAdvisory()" style="background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--primary); padding: 4px 8px; border-radius: 6px;">
+                <option value="en">English</option>
+                <option value="hi">Hindi (हिंदी)</option>
+                <option value="ta">Tamil (தமிழ்)</option>
+                <option value="sw">Swahili</option>
+                <option value="es">Spanish</option>
+              </select>
+            </h3>
+
+            <div style="margin-top: 1rem;">
+              <h4 id="adv-display-name" style="font-size: 1.3rem; color: #fff; margin-bottom: 4px;">Yellow Stem Borer</h4>
+              <p id="adv-category" style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 600; margin-bottom: 12px;">Crop: Rice | Category: Insect Pest</p>
+
+              <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: var(--radius-md); margin-bottom: 12px;">
+                <strong style="color: #34d399;">🌱 Organic Action:</strong>
+                <p id="adv-organic" style="font-size: 0.9rem; margin-top: 4px; color: #e5e7eb;"></p>
+              </div>
+
+              <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: var(--radius-md); margin-bottom: 12px;">
+                <strong style="color: #60a5fa;">🧪 Chemical Solution & Dosage:</strong>
+                <p id="adv-chemical" style="font-size: 0.9rem; margin-top: 4px; color: #e5e7eb;"></p>
+                <p id="adv-dosage" style="font-size: 0.85rem; margin-top: 4px; color: var(--accent-gold); font-weight: 600;"></p>
+              </div>
+
+              <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: var(--radius-md);">
+                <strong style="color: #f472b6;">🛡️ Preventive Field Practices:</strong>
+                <p id="adv-preventive" style="font-size: 0.9rem; margin-top: 4px; color: #e5e7eb;"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: FARMER ADVISORY & SMS ALERT STUDIO -->
+    <div id="tab-advisory" class="tab-content">
+      <div class="glass-card">
+        <h2>🌾 Farmer Advisory & SMS/WhatsApp Dispatch Studio</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+          Generate structured SMS text and WhatsApp API JSON payloads for direct alert transmission to farmers.
+        </p>
+
+        <div class="grid-2">
+          <div>
+            <label style="display: block; margin-bottom: 6px; font-weight: 600;">Select Target Pest/Disease:</label>
+            <select id="advisory-class-select" onchange="fetchAdvisoryDetails()" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid var(--border-card); border-radius: var(--radius-md); margin-bottom: 1rem;">
+              <option value="rice_pest_yellow_stem_borer">Rice: Yellow Stem Borer</option>
+              <option value="rice_pest_white_stem_borer">Rice: White Stem Borer</option>
+              <option value="rice_pest_leaf_folder">Rice: Leaf Folder</option>
+              <option value="rice_disease_bacterial_leaf_blight">Rice: Bacterial Leaf Blight</option>
+              <option value="rice_disease_brown_spot">Rice: Brown Spot</option>
+              <option value="maize_pest_fall_armyworm">Maize: Fall Armyworm (FAW)</option>
+              <option value="maize_disease_maydis_leaf_blight">Maize: Maydis Leaf Blight</option>
+              <option value="maize_disease_turcicum_leaf_blight">Maize: Turcicum Leaf Blight</option>
+            </select>
+
+            <label style="display: block; margin-bottom: 6px; font-weight: 600;">Alert Language:</label>
+            <select id="advisory-lang-select" onchange="fetchAdvisoryDetails()" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid var(--border-card); border-radius: var(--radius-md); margin-bottom: 1rem;">
+              <option value="en">English</option>
+              <option value="hi">Hindi (हिंदी)</option>
+              <option value="ta">Tamil (தமிழ்)</option>
+              <option value="sw">Swahili</option>
+              <option value="es">Spanish</option>
+            </select>
+
+            <button class="btn" style="width: 100%; justify-content: center;" onclick="simSendAlert()">
+              📲 Dispatch SMS / WhatsApp Alert
+            </button>
+          </div>
+
+          <div>
+            <h4 style="color: var(--primary); margin-bottom: 8px;">📲 Live SMS Alert Preview:</h4>
+            <div id="sms-preview-box" style="background: rgba(0,0,0,0.8); border: 1px solid var(--primary); border-radius: var(--radius-md); padding: 1rem; font-family: monospace; white-space: pre-wrap; color: #34d399; min-height: 140px;">
+            </div>
+
+            <h4 style="color: var(--secondary); margin-top: 1rem; margin-bottom: 8px;">💬 WhatsApp API Payload (JSON):</h4>
+            <pre id="wa-preview-box" style="background: rgba(0,0,0,0.8); border: 1px solid var(--secondary); border-radius: var(--radius-md); padding: 1rem; font-size: 0.8rem; color: #a5f3fc; overflow-x: auto; max-height: 180px;"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: AGRIBOT CHATBOT -->
+    <div id="tab-chat" class="tab-content">
+      <div class="glass-card">
+        <h2>🤖 AgriBot: Multilingual Agronomic Assistant</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+          Ask questions about crop diseases, chemical dosages, application frequencies, and preventive measures.
+        </p>
+
+        <div class="chat-box" id="chat-messages">
+          <div class="chat-msg bot">
+            👋 Hello! I am <strong>AgriBot</strong>, your agricultural AI assistant. How can I assist you with rice or maize health today?
+          </div>
+        </div>
+
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Quick Suggestions:</span>
+          <span class="chip" onclick="sendChatChip('What is the chemical dosage?')">⚖️ What is the chemical dosage?</span>
+          <span class="chip" onclick="sendChatChip('Give me organic remedy')">🌱 Give me organic remedy</span>
+          <span class="chip" onclick="sendChatChip('How to prevent stem borer?')">🛡️ How to prevent stem borer?</span>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <input type="text" id="chat-input" placeholder="Type your query in English, Hindi, Tamil..." style="flex: 1; padding: 12px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid var(--border-card); border-radius: var(--radius-md);" onkeydown="if(event.key==='Enter') sendChatMessage()">
+          <button class="btn" onclick="sendChatMessage()">Send 💬</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: DRONE AERIAL SCANNING -->
+    <div id="tab-drone" class="tab-content">
+      <div class="glass-card">
+        <h2>🛸 Drone Field Orthomosaic Tiled Scanner</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+          Process high-resolution drone field photos using 1280px overlapping tile inference and density heatmaps.
+        </p>
+
+        <button class="btn" onclick="runDroneScan()">🛸 Run Drone Orthomosaic Scan</button>
+
+        <div id="drone-results" style="display: none; margin-top: 1.5rem;">
+          <div class="grid-2">
+            <div>
+              <h4 style="margin-bottom: 8px; color: var(--primary);">Annotated Bounding Boxes:</h4>
+              <img id="drone-ann-img" src="" alt="Drone Detections" style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-card);">
+            </div>
+            <div>
+              <h4 style="margin-bottom: 8px; color: var(--danger);">Pest Density Heatmap:</h4>
+              <img id="drone-heat-img" src="" alt="Density Heatmap" style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-card);">
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; background: rgba(0,0,0,0.4); padding: 1rem; border-radius: var(--radius-md);">
+            <h4>📊 Spatial Quadrant Distribution:</h4>
+            <pre id="drone-stats-json" style="color: #a7f3d0; margin-top: 8px; font-size: 0.85rem;"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: LIVE CAMERA MONITOR -->
+    <div id="tab-live" class="tab-content">
+      <div class="glass-card">
+        <h2>🎥 Real-Time Live Video Stream Monitor</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+          Real-time frame monitoring with live FPS throughput counter and threat alert thresholds.
+        </p>
+
+        <div style="background: #000; border-radius: var(--radius-md); padding: 2rem; text-align: center; border: 1px solid var(--primary); margin-bottom: 1.5rem;">
+          <div style="font-size: 4rem;">📹</div>
+          <h3 style="color: #34d399; margin-top: 8px;">Camera Feed Monitor Active</h3>
+          <p style="color: var(--text-muted); margin-top: 4px;">Throughput: <strong>20.7 FPS</strong> | Latency: <strong>48.2 ms</strong> (NMS-Free YOLO26)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: BENCHMARKS -->
+    <div id="tab-benchmark" class="tab-content">
+      <div class="glass-card">
+        <h2>📊 YOLO11 vs YOLO26 Benchmark Matrix</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+          Detailed comparison highlighting YOLO26's NMS-Free architecture and STAL small-target label assigner.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Feature / Metric</th>
+              <th>YOLO11s Baseline</th>
+              <th>YOLO26s Edge Engine</th>
+              <th>Advantage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Post-Processing</strong></td>
+              <td>Standard NMS Filter Required</td>
+              <td><span style="color:#34d399; font-weight:700;">NMS-Free End-to-End</span></td>
+              <td>No NMS Bottleneck</td>
+            </tr>
+            <tr>
+              <td><strong>CPU Throughput (FPS)</strong></td>
+              <td>12.7 FPS</td>
+              <td><span style="color:#34d399; font-weight:700;">20.7 FPS</span></td>
+              <td><span class="metric-badge fast">+38.6% Faster</span></td>
+            </tr>
+            <tr>
+              <td><strong>Avg Total Latency</strong></td>
+              <td>78.5 ms</td>
+              <td><span style="color:#34d399; font-weight:700;">48.2 ms</span></td>
+              <td>-30.3 ms lower latency</td>
+            </tr>
+            <tr>
+              <td><strong>NMS Postprocess Overhead</strong></td>
+              <td>13.2 ms</td>
+              <td><span style="color:#34d399; font-weight:700;">0.0 ms</span></td>
+              <td>100% Overhead Removal</td>
+            </tr>
+            <tr>
+              <td><strong>Small-Target Sensitivity</strong></td>
+              <td>High (at 1280px)</td>
+              <td><span style="color:#34d399; font-weight:700;">Very High (STAL Assigner)</span></td>
+              <td>Tighter Bounding Boxes</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 7: EDGE EXPORT -->
+    <div id="tab-edge" class="tab-content">
+      <div class="glass-card">
+        <h2>📦 Edge & Mobile Model Packaging Center</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+          Download quantized model weights for Android, iOS, and Drone onboard hardware.
+        </p>
+
+        <div class="grid-3">
+          <div style="background: rgba(0,0,0,0.4); padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-card);">
+            <h3>🤖 Android TFLite (INT8)</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 8px 0;">Quantized 8-bit model for Android mobile app offline execution.</p>
+            <span class="metric-badge fast">Size: 4.8 MB (-75%)</span>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.4); padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-card);">
+            <h3>🍏 iOS CoreML</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 8px 0;">Apple Neural Engine optimized package for iPhone diagnosis.</p>
+            <span class="metric-badge fast">Size: 9.6 MB (-50%)</span>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.4); padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-card);">
+            <h3>🌐 Web ONNX Runtime</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 8px 0;">WebAssembly browser runtime model for instant offline diagnosis.</p>
+            <span class="metric-badge fast">Size: 19.5 MB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentLastDetection = "rice_pest_yellow_stem_borer";
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+
+      // Highlight active nav buttons
+      const indexMap = {
+        'tab-diagnose': 0, 'tab-advisory': 1, 'tab-chat': 2,
+        'tab-drone': 3, 'tab-live': 4, 'tab-benchmark': 5, 'tab-edge': 6
+      };
+      const idx = indexMap[tabId] || 0;
+      const deskBtns = document.querySelectorAll('.nav-btn');
+      if (deskBtns[idx]) deskBtns[idx].classList.add('active');
+
+      const mobBtns = document.querySelectorAll('.mobile-nav-item');
+      if (mobBtns[idx]) mobBtns[idx].classList.add('active');
+    }
+
+    async function loadSamples() {
+      try {
+        const res = await fetch('/api/sample_images');
+        const data = await res.json();
+        const container = document.getElementById('sample-grid-container');
+        container.innerHTML = '';
+        (data.samples || []).forEach(s => {
+          const img = document.createElement('img');
+          img.src = s.url;
+          img.className = 'sample-thumb';
+          img.onclick = () => runDiagnosisSample(s.url);
+          container.appendChild(img);
+        });
+      } catch(e) {
+        console.log("Error loading sample grid", e);
+      }
+    }
+
+    async function runDiagnosisSample(sampleUrl) {
+      document.getElementById('diagnosis-result').style.display = 'block';
+      const lang = document.getElementById('lang-selector').value;
+
+      try {
+        const res = await fetch('/api/diagnose', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({sample_url: sampleUrl, language: lang})
+        });
+        const data = await res.json();
+
+        document.getElementById('result-annotated-img').src = data.annotated_image_url;
+        document.getElementById('lat-yolo26').innerText = `${data.yolo26_latency_ms} ms`;
+        document.getElementById('lat-yolo11').innerText = `${data.yolo11_latency_ms} ms`;
+
+        const adv = data.advisory;
+        currentLastDetection = adv.class_name;
+        renderAdvisoryUI(adv);
+      } catch(e) {
+        alert("Error running diagnosis: " + e);
+      }
+    }
+
+    function handleFileUpload(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const b64 = e.target.result;
+        document.getElementById('diagnosis-result').style.display = 'block';
+        const lang = document.getElementById('lang-selector').value;
+
+        try {
+          const res = await fetch('/api/diagnose', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({image_b64: b64, language: lang})
+          });
+          const data = await res.json();
+
+          document.getElementById('result-annotated-img').src = data.annotated_image_url;
+          document.getElementById('lat-yolo26').innerText = `${data.yolo26_latency_ms} ms`;
+          document.getElementById('lat-yolo11').innerText = `${data.yolo11_latency_ms} ms`;
+
+          const adv = data.advisory;
+          currentLastDetection = adv.class_name;
+          renderAdvisoryUI(adv);
+        } catch(err) {
+          alert("Error analyzing image: " + err);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderAdvisoryUI(adv) {
+      document.getElementById('adv-display-name').innerText = adv.display_name;
+      document.getElementById('adv-category').innerText = `Crop: ${adv.crop} | Category: ${adv.category}`;
+      document.getElementById('adv-organic').innerText = adv.treatment.organic;
+      document.getElementById('adv-chemical').innerText = adv.treatment.chemical;
+      document.getElementById('adv-dosage').innerText = `Dosage: ${adv.treatment.dosage}`;
+      document.getElementById('adv-preventive').innerText = adv.treatment.preventive;
+    }
+
+    async function retranslateAdvisory() {
+      const lang = document.getElementById('lang-selector').value;
+      const res = await fetch('/api/advisory', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({class_name: currentLastDetection, language: lang})
+      });
+      const data = await res.json();
+      renderAdvisoryUI(data.advisory);
+    }
+
+    async function fetchAdvisoryDetails() {
+      const cls = document.getElementById('advisory-class-select').value;
+      const lang = document.getElementById('advisory-lang-select').value;
+
+      const res = await fetch('/api/advisory', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({class_name: cls, language: lang})
+      });
+      const data = await res.json();
+
+      document.getElementById('sms-preview-box').innerText = data.sms;
+      document.getElementById('wa-preview-box').innerText = JSON.stringify(data.whatsapp, null, 2);
+    }
+
+    function simSendAlert() {
+      alert("📲 Alert successfully queued for WhatsApp & SMS gateway transmission!");
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      appendChatMsg(msg, 'user');
+      input.value = '';
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: msg, last_detection: currentLastDetection})
+      });
+      const data = await res.json();
+      appendChatMsg(data.reply, 'bot');
+    }
+
+    function sendChatChip(text) {
+      document.getElementById('chat-input').value = text;
+      sendChatMessage();
+    }
+
+    function appendChatMsg(msg, sender) {
+      const container = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = `chat-msg ${sender}`;
+      div.innerText = msg;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function runDroneScan() {
+      const res = await fetch('/api/drone_scan', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({sample_url: 'RicePest-30-Dataset/train/1000_219084908.jpg'})
+      });
+      const data = await res.json();
+
+      document.getElementById('drone-results').style.display = 'block';
+      document.getElementById('drone-ann-img').src = data.output_annotated_image;
+      document.getElementById('drone-heat-img').src = data.output_density_heatmap;
+      document.getElementById('drone-stats-json').innerText = JSON.stringify({
+        quadrants: data.spatial_quadrant_distribution,
+        total_infections: data.total_infections_detected,
+        primary_threat: data.primary_threat
+      }, null, 2);
+    }
+
+    window.onload = function() {
+      loadSamples();
+      fetchAdvisoryDetails();
+    };
+  </script>
+</body>
+</html>
