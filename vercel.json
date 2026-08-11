@@ -1,18 +1,23 @@
 {
-  "framework": null,
-  "cleanUrls": true,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "https://pest-detection-b6pu.onrender.com/api/:path*"
+      "src": "/api/(.*)",
+      "dest": "https://pest-detection-b6pu.onrender.com/api/$1"
     },
     {
-      "source": "/runs/:path*",
-      "destination": "https://pest-detection-b6pu.onrender.com/runs/:path*"
+      "src": "/runs/(.*)",
+      "dest": "https://pest-detection-b6pu.onrender.com/runs/$1"
     },
     {
-      "source": "/RicePest-30-Dataset/:path*",
-      "destination": "https://pest-detection-b6pu.onrender.com/RicePest-30-Dataset/:path*"
+      "src": "/RicePest-30-Dataset/(.*)",
+      "dest": "https://pest-detection-b6pu.onrender.com/RicePest-30-Dataset/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
